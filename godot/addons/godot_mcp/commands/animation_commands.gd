@@ -2,6 +2,12 @@
 extends MCPBaseCommand
 class_name MCPAnimationCommands
 
+# Fix #1: Animation Visibility — Cache for AnimationPlayer and animations
+var _player_cache := {}
+var _animation_cache := {}
+var _cache_time := {}
+var _cache_duration := 5.0  # Cache for 5 seconds
+
 
 const TRACK_TYPE_MAP := {
 	"value": Animation.TYPE_VALUE,
@@ -38,23 +44,115 @@ func get_commands() -> Dictionary:
 		"remove_animation_track": remove_animation_track,
 		"add_keyframe": add_keyframe,
 		"remove_keyframe": remove_keyframe,
-		"update_keyframe": update_keyframe
+		"update_keyframe": update_keyframe,
+		"synchronize": synchronize_command  # Fix #1: Frame synchronization
 	}
 
 
 func _get_animation_player(node_path: String) -> AnimationPlayer:
+	var now := Time.get_ticks_msec()
+
+	# Check cache
+	if _player_cache.has(node_path):
+		if now - _cache_time[node_path] < _cache_duration * 1000:
+			var cached = _player_cache[node_path]
+			# Verify node still exists
+			if is_instance_valid(cached) and not cached.is_queued_for_deletion():
+				return cached
+
+	# Cache miss or expired - fetch fresh
 	var node := _get_node(node_path)
 	if not node:
 		return null
 	if not node is AnimationPlayer:
 		return null
-	return node as AnimationPlayer
+
+	var player := node as AnimationPlayer
+
+	# Update cache
+	_player_cache[node_path] = player
+	_cache_time[node_path] = now
+
+	return player
 
 
 func _get_animation(player: AnimationPlayer, anim_name: String) -> Animation:
+	# Handle library paths (e.g., "library/animation")
+	var lib_name := ""
+	var pure_name := anim_name
+
+	if "/" in anim_name:
+		var parts := anim_name.split("/", true, 1)
+		lib_name = parts[0]
+		pure_name = parts[1]
+
+	# Check if animation exists
 	if not player.has_animation(anim_name):
 		return null
-	return player.get_animation(anim_name)
+
+	# Check animation cache
+	var cache_key := str(player.get_path()) + ":" + anim_name
+	var now := Time.get_ticks_msec()
+
+	if _animation_cache.has(cache_key):
+		if now - _cache_time[cache_key] < _cache_duration * 1000:
+			return _animation_cache[cache_key]
+
+	# Force load animation resource
+	var anim := player.get_animation(anim_name)
+	if not anim:
+		return null
+
+	# Force load from disk if resource_path exists
+	if anim.resource_path and not anim.resource_path.is_empty():
+		var loaded = ResourceLoader.load(anim.resource_path)
+		if loaded and loaded is Animation:
+			anim = loaded
+
+	# Update cache
+	_animation_cache[cache_key] = anim
+	_cache_time[cache_key] = now
+
+	return anim
+
+
+# Fix #1: Animation Visibility — Frame synchronization
+func synchronize(wait_for_physics: bool = true) -> Dictionary:
+	if wait_for_physics:
+		await Engine.get_main_loop().physics_frame
+
+	await Engine.get_main_loop().process_frame
+	await Engine.get_main_loop().process_frame
+
+	return {
+		"synced": true,
+		"physics_frame": Engine.get_physics_frames(),
+		"process_frame": Engine.get_process_frames(),
+		"timestamp": Time.get_ticks_msec()
+	}
+
+
+# Fix #1: Animation Visibility — Clear cache methods
+func clear_animation_cache(node_path: String = "") -> void:
+	var now := Time.get_ticks_msec()
+
+	if node_path.is_empty():
+		# Clear entire cache
+		_player_cache.clear()
+		_animation_cache.clear()
+		_cache_time.clear()
+	else:
+		# Clear specific player cache
+		if _player_cache.has(node_path):
+			_player_cache.erase(node_path)
+			_cache_time.erase(node_path)
+
+			# Clear all animations for this player
+			var player_prefix := node_path + ":"
+			for key in _animation_cache.keys():
+				if key.begins_with(player_prefix):
+					_animation_cache.erase(key)
+					_cache_time.erase(key)
 
 
 func _track_type_to_string(track_type: int) -> String:
@@ -112,6 +210,10 @@ func get_animation_player_info(params: Dictionary) -> Dictionary:
 			return _error("NODE_NOT_FOUND", "Node not found: %s" % node_path)
 		return _error("NOT_ANIMATION_PLAYER", "Node is not an AnimationPlayer: %s" % node_path)
 
+	# Fix #1: Synchronize with physics frame for consistent state
+	await Engine.get_main_loop().physics_frame
+	await Engine.get_main_loop().process_frame
+
 	var libraries := {}
 	for lib_name in player.get_animation_library_list():
 		var lib := player.get_animation_library(lib_name)
@@ -142,6 +244,10 @@ func get_animation_details(params: Dictionary) -> Dictionary:
 		if not node:
 			return _error("NODE_NOT_FOUND", "Node not found: %s" % node_path)
 		return _error("NOT_ANIMATION_PLAYER", "Node is not an AnimationPlayer")
+
+	# Fix #1: Synchronize with physics frame for consistent state
+	await Engine.get_main_loop().physics_frame
+	await Engine.get_main_loop().process_frame
 
 	var anim := _get_animation(player, anim_name)
 	if not anim:
@@ -367,6 +473,9 @@ func delete_animation(params: Dictionary) -> Dictionary:
 
 	lib.remove_animation(anim_name)
 
+	# Fix #1: Clear cache for deleted animation
+	clear_animation_cache(node_path)
+
 	return _success({"deleted": anim_name})
 
 
@@ -575,6 +684,15 @@ func remove_keyframe(params: Dictionary) -> Dictionary:
 	anim.track_remove_key(track_index, keyframe_index)
 
 	return _success({"removed_keyframe": keyframe_index, "track_index": track_index})
+
+
+# Fix #1: Animation Visibility — Frame synchronization command
+func synchronize_command(params: Dictionary) -> Dictionary:
+	var wait_for_physics: bool = params.get("wait_for_physics", true)
+
+	var result := await synchronize(wait_for_physics)
+
+	return _success(result)
 
 
 func update_keyframe(params: Dictionary) -> Dictionary:
