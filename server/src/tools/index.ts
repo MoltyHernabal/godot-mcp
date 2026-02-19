@@ -9,6 +9,10 @@ import { resourceTools } from './resource.js';
 import { scene3dTools } from './scene3d.js';
 import { docsTools } from './docs.js';
 import { inputTools } from './input.js';
+import { telemetryTools } from './telemetry.js';
+import { screenshotWithStateTools } from './screenshot_with_state.js';
+import { syncTools } from './synchronize.js';
+import { atomicTools } from './atomic.js';
 
 export function registerAllTools(): void {
   registry.registerTools(sceneTools);
@@ -21,6 +25,13 @@ export function registerAllTools(): void {
   registry.registerTools(scene3dTools);
   registry.registerTools(docsTools);
   registry.registerTools(inputTools);
+  // Fix #2: Contact Attribution
+  registry.registerTools(telemetryTools);
+  // Fix #3: Screenshot Evidence
+  registry.registerTools(screenshotWithStateTools);
+  // Fix #4: Tooling Polling
+  registry.registerTools(syncTools);
+  registry.registerTools(atomicTools);
 }
 
 export { sceneTools } from './scene.js';
@@ -33,3 +44,7 @@ export { resourceTools } from './resource.js';
 export { scene3dTools } from './scene3d.js';
 export { docsTools } from './docs.js';
 export { inputTools } from './input.js';
+export { telemetryTools } from './telemetry.js';
+export { screenshotWithStateTools } from './screenshot_with_state.js';
+export { syncTools } from './synchronize.js';
+export { atomicTools } from './atomic.js';
