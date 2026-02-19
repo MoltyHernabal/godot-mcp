@@ -9,6 +9,7 @@ import { resourceTools } from './resource.js';
 import { scene3dTools } from './scene3d.js';
 import { docsTools } from './docs.js';
 import { inputTools } from './input.js';
+import { telemetryTools } from './telemetry.js';
 
 export function registerAllTools(): void {
   registry.registerTools(sceneTools);
@@ -21,6 +22,8 @@ export function registerAllTools(): void {
   registry.registerTools(scene3dTools);
   registry.registerTools(docsTools);
   registry.registerTools(inputTools);
+  // Fix #2: Contact Attribution
+  registry.registerTools(telemetryTools);
 }
 
 export { sceneTools } from './scene.js';
@@ -33,3 +36,4 @@ export { resourceTools } from './resource.js';
 export { scene3dTools } from './scene3d.js';
 export { docsTools } from './docs.js';
 export { inputTools } from './input.js';
+export { telemetryTools } from './telemetry.js';
