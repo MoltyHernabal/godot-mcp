@@ -22,7 +22,12 @@ func _error(code: String, message: String) -> Dictionary:
 
 
 func _get_node(path: String) -> Node:
-	return MCPUtils.get_node_from_path(path)
+	return MCPUtils.get_node_with_cache(path)
+
+
+# Fix #0: Path Resolution - Clear cache when node is deleted
+func _clear_node_cache(path: String) -> void:
+	MCPUtils.clear_node_cache(path)
 
 
 func _serialize_value(value: Variant) -> Variant:

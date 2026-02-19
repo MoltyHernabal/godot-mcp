@@ -219,6 +219,9 @@ func delete_node(params: Dictionary) -> Dictionary:
 	if node == root:
 		return _error("CANNOT_DELETE_ROOT", "Cannot delete the root node")
 
+	# Fix #0: Clear cache before deleting
+	_clear_node_cache(node_path)
+
 	node.get_parent().remove_child(node)
 	node.queue_free()
 
@@ -252,6 +255,9 @@ func reparent_node(params: Dictionary) -> Dictionary:
 
 	if new_parent == node or node.is_ancestor_of(new_parent):
 		return _error("INVALID_REPARENT", "Cannot reparent a node to itself or its descendant")
+
+	# Fix #0: Clear old path cache before reparenting (path will change)
+	_clear_node_cache(node_path)
 
 	node.reparent(new_parent)
 
