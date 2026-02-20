@@ -1,4 +1,4 @@
-# godot-mcp-fixed
+# godot-mcp
 
 **Fork of [satelliteoflove/godot-mcp](https://github.com/satelliteoflove/godot-mcp) with 5 critical fixes for runtime inspection.**
 
@@ -25,7 +25,7 @@ The upstream `godot-mcp` server has 5 critical issues that prevent reliable runt
   "mcpServers": {
     "godot": {
       "command": "node",
-      "args": ["/path/to/godot-mcp-fixed/dist/index.js"],
+      "args": ["/path/to/godot-mcp/dist/index.js"],
       "env": {
         "GODOT_HOST": "127.0.0.1",
         "GODOT_PORT": "6550"
@@ -38,7 +38,7 @@ The upstream `godot-mcp` server has 5 critical issues that prevent reliable runt
 ### 2. Install Godot addon
 
 ```bash
-npx @moltyhernabal/godot-mcp-fixed --install-addon /path/to/your/godot/project
+npx @moltyhernabal/godot-mcp --install-addon /path/to/your/godot/project
 ```
 
 Enable in Godot: **Project Settings > Plugins > Godot MCP**
@@ -192,7 +192,7 @@ They don't overlap much, and they don't conflict. Run them side by side for best
   "mcpServers": {
     "godot": {
       "command": "node",
-      "args": ["/path/to/godot-mcp-fixed/dist/index.js"],
+      "args": ["/path/to/godot-mcp/dist/index.js"],
       "env": {
         "GODOT_HOST": "127.0.0.1",
         "GODOT_PORT": "6550"
@@ -237,8 +237,8 @@ They don't overlap much, and they don't conflict. Run them side by side for best
 ### From Source
 
 ```bash
-git clone https://github.com/MoltyHernabal/godot-mcp-fixed.git
-cd godot-mcp-fixed
+git clone https://github.com/MoltyHernabal/godot-mcp.git
+cd godot-mcp
 npm install
 npm run build
 ```
@@ -246,7 +246,7 @@ npm run build
 ### NPM (Coming Soon)
 
 ```bash
-npm install -g @moltyhernabal/godot-mcp-fixed
+npm install -g @moltyhernabal/godot-mcp
 ```
 
 ---
